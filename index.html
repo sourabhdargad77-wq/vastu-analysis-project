@@ -29,13 +29,14 @@
 const c=document.getElementById('c'),ctx=c.getContext('2d');let img=null,cx=0,cy=0,drag=false,boundaryMode=false,points=[],chakraReady=false;
 function fit(){if(!img)return;let w=document.querySelector('.canvasWrap').clientWidth-20,h=document.querySelector('.canvasWrap').clientHeight-20,s=Math.min(w/img.width,h/img.height,1);c.width=img.width*s;c.height=img.height*s;cx=c.width/2;cy=c.height/2;draw()}
 function draw(){ctx.clearRect(0,0,c.width,c.height);if(!img)return;ctx.drawImage(img,0,0,c.width,c.height);
-if(points.length){ctx.save();ctx.strokeStyle='#159447';ctx.fillStyle='#ff5a4f';ctx.lineWidth=2;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));if(!boundaryMode&&points.length>2)ctx.closePath();ctx.stroke();points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill()});ctx.restore()}
+if(points.length){ctx.save();ctx.strokeStyle='#159447';ctx.fillStyle='#ff5a4f';ctx.lineWidth=2;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));if(points.length>2){ctx.closePath();ctx.save();ctx.globalAlpha=.08;ctx.fillStyle='#159447';ctx.fill();ctx.restore()}ctx.stroke();points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill()});ctx.restore()}
 if(!chakraReady)return;let base={up:0,right:90,down:180,left:270}[northSide.value]||0,d=base+(+deg.value||0),op=(+opacity.value||70)/100,r=Math.min(c.width,c.height)*(+size.value||70)/200;ctx.save();ctx.translate(cx,cy);ctx.rotate(d*Math.PI/180);ctx.globalAlpha=op;ctx.strokeStyle='#555';ctx.fillStyle='#111';ctx.lineWidth=Math.max(1,c.width/650);
 ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
 let z=+zones.value||32;for(let i=0;i<z;i++){let a=i*Math.PI*2/z;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(a)*r,-Math.cos(a)*r);ctx.stroke()}
 ctx.globalAlpha=1;ctx.font='bold '+Math.max(10,r/16)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
 const dirs=['N1','N2','N3','N4','N5','N6','N7','N8','E1','E2','E3','E4','E5','E6','E7','E8','S1','S2','S3','S4','S5','S6','S7','S8','W1','W2','W3','W4','W5','W6','W7','W8'];
-if(z===32){for(let i=0;i<32;i++){let a=(i+.5)*Math.PI*2/32,lr=r*.88;ctx.save();ctx.translate(Math.sin(a)*lr,-Math.cos(a)*lr);ctx.rotate(-d*Math.PI/180);ctx.fillText(dirs[i],0,0);ctx.restore()}}
+let labels=z===8?['N','NE','E','SE','S','SW','W','NW']:z===16?['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']:dirs;
+for(let i=0;i<z;i++){let a=(i+.5)*Math.PI*2/z,lr=r*.88;ctx.save();ctx.translate(Math.sin(a)*lr,-Math.cos(a)*lr);ctx.rotate(-d*Math.PI/180);ctx.fillText(labels[i],0,0);ctx.restore()}
 ctx.font='bold '+Math.max(12,r/11)+'px system-ui';ctx.save();ctx.translate(0,-r-12);ctx.rotate(-d*Math.PI/180);ctx.fillText('N',0,0);ctx.restore();ctx.restore();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill()}
 file.onchange=e=>{let f=e.target.files[0];if(!f)return;let u=URL.createObjectURL(f);img=new Image();img.onload=()=>{points=[];chakraReady=false;fit();URL.revokeObjectURL(u)};img.src=u};
 function polygonCenter(ps){let A=0,X=0,Y=0;for(let i=0;i<ps.length;i++){let p=ps[i],q=ps[(i+1)%ps.length],k=p.x*q.y-q.x*p.y;A+=k;X+=(p.x+q.x)*k;Y+=(p.y+q.y)*k}A*=.5;if(Math.abs(A)<.001)return null;return{x:X/(6*A),y:Y/(6*A)}}
