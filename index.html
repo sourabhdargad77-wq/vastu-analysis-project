@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vastu Analysis Project</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial;background:#f6f2e9;color:#29251f}.top{background:#5b2419;color:#fff;padding:16px 22px}.top h1{margin:0;font-size:22px}.top small{color:#f0d7a5}.wrap{display:grid;grid-template-columns:300px 1fr;gap:16px;padding:16px;max-width:1400px;margin:auto}.panel,.stage{background:#fff;border:1px solid #e2d9c9;border-radius:16px;box-shadow:0 4px 18px #0000000d}.panel{padding:16px}.panel h2{font-size:16px;margin:0 0 14px}.field{margin:12px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.field input[type=number],.field select{width:100%;padding:10px;border:1px solid #cfc5b5;border-radius:9px}.btn{width:100%;padding:11px;border:0;border-radius:9px;background:#8a3b25;color:white;font-weight:700;margin-top:8px;cursor:pointer}.btn.alt{background:#efe6d6;color:#5b2419}.stage{min-height:72vh;padding:12px;display:flex;flex-direction:column}.canvasWrap{position:relative;flex:1;min-height:520px;background:#f3f3f3;border:2px dashed #d5c8b6;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}canvas{max-width:100%;max-height:100%;touch-action:none}.hint{text-align:center;color:#756d62;padding:10px;font-size:13px}.badge{display:inline-block;background:#f0d7a5;color:#5b2419;padding:4px 8px;border-radius:20px;font-size:12px;margin-top:6px}@media(max-width:760px){.wrap{grid-template-columns:1fr}.canvasWrap{min-height:55vh}}
+</style></head>
+<body><header class="top"><h1>Vastu Analysis Project</h1><small>Plan • Center • Degree • Shakti Chakra</small></header>
+<main class="wrap"><aside class="panel">
+<h2>Analysis Controls</h2>
+<div class="field"><label>1. Upload Layout Plan</label><input id="file" type="file" accept="image/*"></div>
+<div class="field"><label>2. Google Earth Degree</label><input id="deg" type="number" min="0" max="359.99" step=".01" value="0"></div>
+<div class="field"><label>3. Chakra Size</label><input id="size" type="range" min="20" max="95" value="70"></div>
+<div class="field"><label>4. Chakra Opacity</label><input id="opacity" type="range" min="10" max="100" value="70"></div>
+<button class="btn" id="apply">Apply Shakti Chakra</button>
+<button class="btn alt" id="center">Reset to Auto Center</button>
+<button class="btn alt" id="download">Export PNG</button>
+<span class="badge">V1 • Image plans</span>
+</aside>
+<section class="stage"><div class="canvasWrap"><canvas id="c"></canvas></div><div class="hint">Upload a plan. Chakra locks to the calculated image center; drag the center marker for fine adjustment. Degree rotates clockwise from North.</div></section></main>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let img=null,cx=0,cy=0,drag=false;
+function fit(){if(!img)return;let w=document.querySelector('.canvasWrap').clientWidth-20,h=document.querySelector('.canvasWrap').clientHeight-20,s=Math.min(w/img.width,h/img.height,1);c.width=img.width*s;c.height=img.height*s;cx=c.width/2;cy=c.height/2;draw()}
+function draw(){ctx.clearRect(0,0,c.width,c.height);if(!img)return;ctx.drawImage(img,0,0,c.width,c.height);let d=+deg.value||0,op=(+opacity.value||70)/100,r=Math.min(c.width,c.height)*(+size.value||70)/200;ctx.save();ctx.translate(cx,cy);ctx.rotate(d*Math.PI/180);ctx.globalAlpha=op;ctx.strokeStyle='#9b2f24';ctx.fillStyle='#9b2f24';ctx.lineWidth=Math.max(1,c.width/500);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();for(let i=0;i<32;i++){let a=i*Math.PI*2/32;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(a)*r,-Math.cos(a)*r);ctx.stroke()}for(let rr=1;rr<=3;rr++){ctx.beginPath();ctx.arc(0,0,r*rr/4,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.font='bold '+Math.max(12,r/10)+'px system-ui';ctx.textAlign='center';ctx.fillText('N',0,-r-6);ctx.restore();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill()}
+file.onchange=e=>{let f=e.target.files[0];if(!f)return;let u=URL.createObjectURL(f);img=new Image();img.onload=()=>{fit();URL.revokeObjectURL(u)};img.src=u};
+apply.onclick=draw;deg.oninput=draw;size.oninput=draw;opacity.oninput=draw;center.onclick=()=>{if(img){cx=c.width/2;cy=c.height/2;draw()}};
+c.onpointerdown=e=>{if(Math.hypot(e.offsetX-cx,e.offsetY-cy)<30)drag=true};c.onpointermove=e=>{if(drag){cx=e.offsetX;cy=e.offsetY;draw()}};c.onpointerup=()=>drag=false;c.onpointerleave=()=>drag=false;
+download.onclick=()=>{if(!img)return;let a=document.createElement('a');a.download='vastu-analysis.png';a.href=c.toDataURL('image/png');a.click()};window.onresize=fit;
+</script></body></html>
