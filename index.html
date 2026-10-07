@@ -17,24 +17,24 @@
 <button class="btn" id="boundary">Trace Boundary</button>
 <button class="btn alt" id="finish">Finish Boundary & Calculate Center</button>
 <button class="btn alt" id="clearBoundary">Clear Boundary</button>
-<button class="btn" id="apply">Apply Shakti Chakra</button>
+<button class="btn" id="apply">Confirm True North & Show Chakra</button>
 <button class="btn alt" id="center">Reset to Auto Center</button>
 <button class="btn alt" id="download">Export PNG</button>
 <span class="badge">V2 • Boundary + Polygon Center</span>
 </aside>
 <section class="stage"><div class="canvasWrap"><canvas id="c"></canvas></div><div class="hint">Upload a plan → Trace Boundary → tap each outer corner in order → Finish Boundary. The app calculates the polygon centroid and locks the Chakra to it. You can still drag the center marker for fine adjustment. Choose where North lies on the uploaded plan (Up/Right/Down/Left), then enter the True-North bearing/offset in degrees. Degree rotates clockwise.</div></section></main>
 <script>
-const c=document.getElementById('c'),ctx=c.getContext('2d');let img=null,cx=0,cy=0,drag=false,boundaryMode=false,points=[];
+const c=document.getElementById('c'),ctx=c.getContext('2d');let img=null,cx=0,cy=0,drag=false,boundaryMode=false,points=[],chakraReady=false;
 function fit(){if(!img)return;let w=document.querySelector('.canvasWrap').clientWidth-20,h=document.querySelector('.canvasWrap').clientHeight-20,s=Math.min(w/img.width,h/img.height,1);c.width=img.width*s;c.height=img.height*s;cx=c.width/2;cy=c.height/2;draw()}
 function draw(){ctx.clearRect(0,0,c.width,c.height);if(!img)return;ctx.drawImage(img,0,0,c.width,c.height);
 if(points.length){ctx.save();ctx.strokeStyle='#1565c0';ctx.fillStyle='#1565c0';ctx.lineWidth=2;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));if(!boundaryMode&&points.length>2)ctx.closePath();ctx.stroke();points.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill()});ctx.restore()}
-let base={up:0,right:90,down:180,left:270}[northSide.value]||0,d=base+(+deg.value||0),op=(+opacity.value||70)/100,r=Math.min(c.width,c.height)*(+size.value||70)/200;ctx.save();ctx.translate(cx,cy);ctx.rotate(d*Math.PI/180);ctx.globalAlpha=op;ctx.strokeStyle='#9b2f24';ctx.fillStyle='#9b2f24';ctx.lineWidth=Math.max(1,c.width/500);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();for(let i=0;i<32;i++){let a=i*Math.PI*2/32;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(a)*r,-Math.cos(a)*r);ctx.stroke()}for(let rr=1;rr<=3;rr++){ctx.beginPath();ctx.arc(0,0,r*rr/4,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.font='bold '+Math.max(12,r/10)+'px system-ui';ctx.textAlign='center';ctx.fillText('N',0,-r-6);ctx.restore();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill()}
-file.onchange=e=>{let f=e.target.files[0];if(!f)return;let u=URL.createObjectURL(f);img=new Image();img.onload=()=>{fit();URL.revokeObjectURL(u)};img.src=u};
+if(!chakraReady)return;let base={up:0,right:90,down:180,left:270}[northSide.value]||0,d=base+(+deg.value||0),op=(+opacity.value||70)/100,r=Math.min(c.width,c.height)*(+size.value||70)/200;ctx.save();ctx.translate(cx,cy);ctx.rotate(d*Math.PI/180);ctx.globalAlpha=op;ctx.strokeStyle='#9b2f24';ctx.fillStyle='#9b2f24';ctx.lineWidth=Math.max(1,c.width/500);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();for(let i=0;i<32;i++){let a=i*Math.PI*2/32;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(a)*r,-Math.cos(a)*r);ctx.stroke()}for(let rr=1;rr<=3;rr++){ctx.beginPath();ctx.arc(0,0,r*rr/4,0,Math.PI*2);ctx.stroke()}ctx.globalAlpha=1;ctx.font='bold '+Math.max(12,r/10)+'px system-ui';ctx.textAlign='center';ctx.fillText('N',0,-r-6);ctx.restore();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill()}
+file.onchange=e=>{let f=e.target.files[0];if(!f)return;let u=URL.createObjectURL(f);img=new Image();img.onload=()=>{points=[];chakraReady=false;fit();URL.revokeObjectURL(u)};img.src=u};
 function polygonCenter(ps){let A=0,X=0,Y=0;for(let i=0;i<ps.length;i++){let p=ps[i],q=ps[(i+1)%ps.length],k=p.x*q.y-q.x*p.y;A+=k;X+=(p.x+q.x)*k;Y+=(p.y+q.y)*k}A*=.5;if(Math.abs(A)<.001)return null;return{x:X/(6*A),y:Y/(6*A)}}
-boundary.onclick=()=>{if(!img)return;boundaryMode=true;points=[];draw();boundary.textContent='Tap Corners on Plan'};
-finish.onclick=()=>{if(points.length<3)return alert('Please mark at least 3 boundary points.');boundaryMode=false;let p=polygonCenter(points);if(p){cx=p.x;cy=p.y}draw()};
-clearBoundary.onclick=()=>{points=[];boundaryMode=false;if(img){cx=c.width/2;cy=c.height/2}boundary.textContent='Trace Boundary';draw()};
-apply.onclick=draw;deg.oninput=draw;northSide.onchange=draw;size.oninput=draw;opacity.oninput=draw;center.onclick=()=>{if(img){cx=c.width/2;cy=c.height/2;draw()}};
+boundary.onclick=()=>{if(!img)return alert('First upload a plan.');boundaryMode=true;points=[];chakraReady=false;draw();boundary.textContent='Tap Corners on Plan'};
+finish.onclick=()=>{if(points.length<3)return alert('Please mark at least 3 boundary points.');boundaryMode=false;let p=polygonCenter(points);if(p){cx=p.x;cy=p.y}chakraReady=false;boundary.textContent='Trace Boundary';draw()};
+clearBoundary.onclick=()=>{points=[];boundaryMode=false;chakraReady=false;if(img){cx=c.width/2;cy=c.height/2}boundary.textContent='Trace Boundary';draw()};
+apply.onclick=()=>{if(!img)return alert('First upload a plan.');if(points.length<3)return alert('First select and finish the boundary.');chakraReady=true;draw()};deg.oninput=()=>{if(chakraReady)draw()};northSide.onchange=()=>{if(chakraReady)draw()};size.oninput=draw;opacity.oninput=draw;center.onclick=()=>{if(img){cx=c.width/2;cy=c.height/2;draw()}};
 c.onpointerdown=e=>{if(boundaryMode){points.push({x:e.offsetX,y:e.offsetY});draw();return}if(Math.hypot(e.offsetX-cx,e.offsetY-cy)<30)drag=true};c.onpointermove=e=>{if(drag){cx=e.offsetX;cy=e.offsetY;draw()}};c.onpointerup=()=>drag=false;c.onpointerleave=()=>drag=false;
 download.onclick=()=>{if(!img)return;let a=document.createElement('a');a.download='vastu-analysis.png';a.href=c.toDataURL('image/png');a.click()};window.onresize=fit;
 </script></body></html>
